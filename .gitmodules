@@ -1,3 +1,6 @@
 [submodule "eBikeWeb"]
 	path = eBikeWeb
 	url = https://github.com/JoDaniel1412/eBikeWeb
+[submodule "eBikeServices"]
+	path = eBikeServices
+	url = https://github.com/JoDaniel1412/eBikeServices
