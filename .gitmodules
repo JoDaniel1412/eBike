@@ -1,0 +1,3 @@
+[submodule "eBikeWeb"]
+	path = eBikeWeb
+	url = https://github.com/JoDaniel1412/eBikeWeb
