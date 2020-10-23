@@ -28,7 +28,7 @@ class categorias(db.Model):
 class tiendas(db.Model):
     __tablename__ = 'tiendas'
     __table_args__ = {"schema": "ventas"}
-    idTienda = db.Column(db.Integer, primary_key=True)
+    idTienda = db.Column(db.Integer, primary_key=True, )
     nomTienda = db.Column(db.String(255), nullable = False)
     telefono = db.Column(db.String(255), nullable = True)
     email = db.Column(db.String(255), nullable = True)
@@ -59,21 +59,23 @@ class empleados(db.Model):
     email = db.Column(db.String(255), nullable = False, unique = True)
     telefono = db.Column(db.String(25), nullable = True)
     activo = db.Column(db.Integer, nullable = False)
-    idTienda = db.Column(db.Integer, db.ForeignKey('tiendas.idTienda'), nullable = False)
-    idJefe = db.Column(db.Integer, db.ForeignKey('empleados.idEmpleado'), nullable = True)
+    idTienda = db.Column(db.Integer, db.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
+    idJefe = db.Column(db.Integer, db.ForeignKey('ventas.empleados.idEmpleado'), nullable = True)
 
 class ordenes(db.Model):
     __tablename__ = 'ordenes'
     __table_args__ = {"schema": "ventas"}
     idOrden = db.Column(db.Integer, primary_key=True)
-    idCliente = db.Column(db.Integer, db.ForeignKey('clientes.idCliente'), nullable = False)
+    idCliente = db.Column(db.Integer, db.ForeignKey('ventas.clientes.idCliente'), nullable = False)
     estadoOrden = db.Column(db.Integer, nullable = False)
     fechaOrden = db.Column(db.Date, nullable = False)
     required_date = db.Column(db.Date, nullable = False)
     fechaEnvio = db.Column(db.Date, nullable = True)
-    idTienda = db.Column(db.Integer, db.ForeignKey('tiendas.idTienda'), nullable = False)
-    idEmpleado = db.Column(db.Integer, db.ForeignKey('empleados.idEmpleado'), nullable = False)
-
+    idTienda = db.Column(db.Integer, db.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
+    idEmpleado = db.Column(db.Integer, db.ForeignKey('ventas.empleados.idEmpleado'), nullable = False)
+    children = db.relationship("clientes")
+    children = db.relationship("tiendas")
+    children = db.relationship("empleados")
 
 #----------------------------- Admin View ----------------------------
 
@@ -194,13 +196,13 @@ def get_order_client():
     
     result = []
 
-    for client in clients:
-        new_client = []
+    for order in orders:
+        to_send = []
 
-        for data in client:
-            new_client.append(data)
+        for data in order:
+            to_send.append(data)
 
-        result.append(new_client)
+        result.append(to_send)
 
     return jsonify(result), 200
 
