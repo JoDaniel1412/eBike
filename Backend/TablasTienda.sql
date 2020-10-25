@@ -68,7 +68,7 @@ CREATE TABLE ventas.empleados (
 );
 
 CREATE TABLE ventas.ordenes (
-	idOrden INT PRIMARY KEY,
+	idOrden INT IDENTITY(1,1) PRIMARY KEY,
 	idCliente INT,
 	estadoOrden tinyint NOT NULL,
 	-- Order status: 1 = Pending; 2 = Processing; 3 = Rejected; 4 = Completed

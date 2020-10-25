@@ -8,105 +8,54 @@ import jwt
 import datetime
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://sa:1234@DESKTOP-A1FP3OB\MSSQLSERVER01/database_central?driver=SQL Server"
+#app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@13.66.5.40/NewYork?driver=SQL Server Native Client 11.0"
+app.config['SQLALCHEMY_BINDS'] = {
+    'newyork':      "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@13.66.5.40/NewYork?driver=SQL Server Native Client 11.0",
+    'texas':        "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@157.55.196.141/Texas?driver=SQL Server Native Client 11.0",
+    'california':   "mssql+pyodbc://ezuniga97:@Esteban1497@13.85.159.205/California?driver=SQL Server Native Client 11.0"
+}
+#app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@157.55.196.141/Texas?driver=SQL Server Native Client 11.0"
+#app.config["SQLALCHEMY_DATABASE_URI"] = "mssql+pyodbc://ezuniga97:@Esteban1497@13.85.159.205/California?driver=SQL Server Native Client 11.0"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
+db_california = SQLAlchemy(app)
 
-class marcas(db.Model):
-    __tablename__ = 'marcas'
-    __table_args__ = {"schema": "produccion"}
-    idMarca = db.Column(db.Integer, primary_key=True)
-    nomMarca = db.Column(db.String(255), nullable = False)
-
-class categorias(db.Model):
+class categorias_california(db_california.Model):
+    __bind_key__ = 'california'
     __tablename__ = 'categorias'
     __table_args__ = {"schema": "produccion"}
-    idCategoria = db.Column(db.Integer, primary_key=True)
-    descripcion = db.Column(db.String(255), nullable = False)
+    idCategoria = db_california.Column(db_california.Integer, primary_key=True)
+    descripcion = db_california.Column(db_california.String(255), nullable = False)
 
-class tiendas(db.Model):
-    __tablename__ = 'tiendas'
-    __table_args__ = {"schema": "ventas"}
-    idTienda = db.Column(db.Integer, primary_key=True, )
-    nomTienda = db.Column(db.String(255), nullable = False)
-    telefono = db.Column(db.String(255), nullable = True)
-    email = db.Column(db.String(255), nullable = True)
-    calle = db.Column(db.String(255), nullable = True)
-    ciudad = db.Column(db.String(255), nullable = True)
-    estado = db.Column(db.String(10), nullable = True)
-    codPostal = db.Column(db.String(5), nullable = True)
+db_texas = SQLAlchemy(app)
 
-class clientes(db.Model):
-    __tablename__ = 'clientes'
-    __table_args__ = {"schema": "ventas"}
-    idCliente = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    nombre = db.Column(db.String(255), nullable = False)
-    apellido = db.Column(db.String(255), nullable = False)
-    telefono = db.Column(db.String(255), nullable = True)
-    email = db.Column(db.String(255), nullable = False)
-    calle = db.Column(db.String(255), nullable = True)
-    ciudad = db.Column(db.String(50), nullable = True)
-    estado = db.Column(db.String(25), nullable = True)
-    codPostal = db.Column(db.String(5), nullable = True)
+class categorias_texas(db_texas.Model):
+    __bind_key__ = 'texas'
+    __tablename__ = 'categorias'
+    __table_args__ = {"schema": "produccion"}
+    idCategoria = db_texas.Column(db_texas.Integer, primary_key=True)
+    descripcion = db_texas.Column(db_texas.String(255), nullable = False)
 
-class empleados(db.Model):
-    __tablename__ = 'empleados'
-    __table_args__ = {"schema": "ventas"}
-    idEmpleado = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable = False)
-    apellido = db.Column(db.String(50), nullable = False)
-    email = db.Column(db.String(255), nullable = False, unique = True)
-    telefono = db.Column(db.String(25), nullable = True)
-    activo = db.Column(db.Integer, nullable = False)
-    idTienda = db.Column(db.Integer, db.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
-    idJefe = db.Column(db.Integer, db.ForeignKey('ventas.empleados.idEmpleado'), nullable = True)
+db_newyork = SQLAlchemy(app)
 
-class ordenes(db.Model):
-    __tablename__ = 'ordenes'
-    __table_args__ = {"schema": "ventas"}
-    idOrden = db.Column(db.Integer, primary_key=True)
-    idCliente = db.Column(db.Integer, db.ForeignKey('ventas.clientes.idCliente'), nullable = False)
-    estadoOrden = db.Column(db.Integer, nullable = False)
-    fechaOrden = db.Column(db.Date, nullable = False)
-    required_date = db.Column(db.Date, nullable = False)
-    fechaEnvio = db.Column(db.Date, nullable = True)
-    idTienda = db.Column(db.Integer, db.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
-    idEmpleado = db.Column(db.Integer, db.ForeignKey('ventas.empleados.idEmpleado'), nullable = False)
-    children = db.relationship("clientes")
-    children = db.relationship("tiendas")
-    children = db.relationship("empleados")
+class categorias_newyork(db_newyork.Model):
+    __bind_key__ = 'newyork'
+    __tablename__ = 'categorias'
+    __table_args__ = {"schema": "produccion"}
+    idCategoria = db_newyork.Column(db_newyork.Integer, primary_key=True)
+    descripcion = db_newyork.Column(db_newyork.String(255), nullable = False)
 
 #----------------------------- Admin View ----------------------------
-
-# Testeo
-@app.route('/marca', methods=['GET'])
-def get_marca():
-
-    all_marcas = marcas.query.with_entities(
-        marcas.idMarca,
-        marcas.nomMarca
-    ).all()
-    
-    result = []
-
-    for marca in all_marcas:
-        new_marca = []
-
-        for data in marca:
-            new_marca.append(data)
-
-        result.append(new_marca)
-
-    return jsonify(result), 200
 
 # Categories
 @app.route('/categories', methods=['GET'])
 def get_category():
+    print("RACSO")
 
-    categories = categorias.query.with_entities(
-        categorias.idCategoria,
-        categorias.descripcion
+    categories = categorias_newyork(__bind_key__ = 'newyork').query.with_entities(
+        categorias_newyork.idCategoria,
+        categorias_newyork.descripcion
     ).all()
     
     result = []
@@ -121,88 +70,25 @@ def get_category():
 
     return jsonify(result), 200
 
-# Store names
-@app.route('/stores', methods=['GET'])
-def get_stores():
+# Categories
+@app.route('/este', methods=['GET'])
+def get_este():
+    print("RACSO")
 
-    stores = tiendas.query.with_entities(
-        tiendas.idTienda,
-        tiendas.nomTienda,
-        tiendas.telefono,
-        tiendas.email,
-        tiendas.calle,
-        tiendas.ciudad,
-        tiendas.estado,
-        tiendas.codPostal
+    categories = categorias_california(__bind_key__ = 'california').query.with_entities(
+        categorias_california.idCategoria,
+        categorias_california.descripcion
     ).all()
     
     result = []
 
-    for store in stores:
-        new_store = []
+    for category in categories:
+        new_category = []
 
-        for data in store:
-            new_store.append(data)
+        for data in category:
+            new_category.append(data)
 
-        result.append(new_store)
-
-    return jsonify(result), 200
-
-#Top clients
-@app.route('/clients', methods=['GET'])
-def get_clients():
-
-    clients = clientes.query.with_entities(
-        clientes.idCliente,
-        clientes.nombre,
-        clientes.apellido,
-        clientes.telefono,
-        clientes.email,
-        clientes.calle,
-        clientes.ciudad,
-        clientes.estado,
-        clientes.codPostal
-    ).all()
-    
-    result = []
-
-    for client in clients:
-        new_client = []
-
-        for data in client:
-            new_client.append(data)
-
-        result.append(new_client)
-
-    return jsonify(result), 200
-
-
-# Number of orders per client
-@app.route('/orders/client', methods=['GET'])
-def get_order_client():
-
-    orders = ordenes.query.join(clientes).join(tiendas).join(empleados).with_entities(
-        clientes.idCliente,
-        clientes.nombre,
-        clientes.apellido,
-        clientes.telefono,
-        clientes.email,
-        clientes.calle,
-        clientes.ciudad,
-        clientes.estado,
-        clientes.codPostal,
-        ordenes.estadoOrden
-    ).all()
-    
-    result = []
-
-    for order in orders:
-        to_send = []
-
-        for data in order:
-            to_send.append(data)
-
-        result.append(to_send)
+        result.append(new_category)
 
     return jsonify(result), 200
 
