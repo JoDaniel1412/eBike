@@ -958,6 +958,131 @@ def get_productos():
 
     return jsonify(result), 200
 
+# Insert new Order
+@app.route('/order', methods=['POST'])
+def create_order():
+    
+    data = request.get_json()
+
+    if data["storeName"] == "Baldwin Bikes":
+
+        store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
+        print(store.idTienda)
+
+        ordenes = ordenes_newyork.query.with_entities(
+            ordenes_newyork.idOrden
+        )
+        new_id = 0
+        for orden in ordenes:
+            new_id += 1
+        new_id = new_id + 1
+
+        new_order = ordenes_newyork(
+            idOrden = new_id,
+            idCliente = data["clientId"],
+            estadoOrden = 1,
+            fechaOrden = data["orderDate"],
+            required_date = data["requiredDate"],
+            fechaEnvio = None,
+            idTienda = store.idTienda,
+            idEmpleado = data["employeeId"]
+        ) 
+        db_newyork.session.add(new_order)
+        db_newyork.session.commit()
+
+        product = productos_newyork.query.filter(productos_newyork.nomProducto.like(data["productName"])).first()
+
+        new_detail_order = detalleOrden_newyork(
+            idOrden = new_id,
+            idItem = 1,
+            idProducto = product.idProducto,
+            cantidad = data["quantity"],
+            precioVenta = product.precioVenta,
+            descuento = 0,
+        )
+
+        db_newyork.session.add(new_detail_order)
+        db_newyork.session.commit()
+
+    if data["storeName"] == "Santa Cruz Bikes":
+
+        store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
+        print(store.idTienda)
+
+        ordenes = ordenes_newyork.query.with_entities(
+            ordenes_newyork.idOrden
+        )
+        new_id = 0
+        for orden in ordenes:
+            new_id += 1
+        new_id += 1
+
+        new_order = ordenes_california(
+            idOrden = new_id,
+            idCliente = data["clientId"],
+            estadoOrden = 1,
+            fechaOrden = data["orderDate"],
+            required_date = data["requiredDate"],
+            fechaEnvio = None,
+            idTienda = store.idTienda,
+            idEmpleado = data["employeeId"]
+        ) 
+        db_california.session.add(new_order)
+        db_california.session.commit()
+
+        product = productos_california.query.filter(productos_california.nomProducto.like(data["productName"])).first()
+
+        new_detail_order = detalleOrden_california(
+            idOrden = new_id,
+            idItem = 1,
+            idProducto = product.idProducto,
+            cantidad = data["quantity"],
+            precioVenta = product.precioVenta,
+            descuento = 0,
+        )
+
+        response = jsonify({'message' : 'New order created!'})
+        return response
+
+    if data["storeName"] == "Rowlett Bikes":
+
+        store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
+        print(store.idTienda)
+
+        ordenes = ordenes_newyork.query.with_entities(
+            ordenes_newyork.idOrden
+        )
+        new_id = 0
+        for orden in ordenes:
+            new_id += 1
+        new_id += 1
+
+        new_order = ordenes_texas(
+            idOrden = new_id,
+            idCliente = data["clientId"],
+            estadoOrden = 1,
+            fechaOrden = data["orderDate"],
+            required_date = data["requiredDate"],
+            fechaEnvio = None,
+            idTienda = store.idTienda,
+            idEmpleado = data["employeeId"]
+        ) 
+        db_texas.session.add(new_order)
+        db_texas.session.commit()
+
+        product = productos_texas.query.filter(productos_texas.nomProducto.like(data["productName"])).first()
+
+        new_detail_order = detalleOrden_texas(
+            idOrden = new_id,
+            idItem = 1,
+            idProducto = product.idProducto,
+            cantidad = data["quantity"],
+            precioVenta = product.precioVenta,
+            descuento = 0,
+        )
+
+        response = jsonify({'message' : 'New order created!'})
+        return response
 
 #----------------------------- Run  ----------------------------
 if __name__ == "__main__":
