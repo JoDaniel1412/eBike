@@ -72,8 +72,8 @@ class ordenes_california(db_california.Model):
     fechaOrden = db_california.Column(db_california.Date, nullable = False)
     required_date = db_california.Column(db_california.Date, nullable = False)
     fechaEnvio = db_california.Column(db_california.Date, nullable = True)
-    idTienda = db_california.Column(db_california.Integer, db_california.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
-    idEmpleado = db_california.Column(db_california.Integer, db_california.ForeignKey('ventas.empleados.idEmpleado'), nullable = False)
+    idTienda = db_california.Column(db_california.Integer, nullable = False)
+    idEmpleado = db_california.Column(db_california.Integer, nullable = False)
 
 # -------------------------------------- Modelo de la base de Texas -----------------------------------------------------
 db_texas = SQLAlchemy(app)
@@ -131,8 +131,8 @@ class ordenes_texas(db_texas.Model):
     fechaOrden = db_texas.Column(db_texas.Date, nullable = False)
     required_date = db_texas.Column(db_texas.Date, nullable = False)
     fechaEnvio = db_texas.Column(db_texas.Date, nullable = True)
-    idTienda = db_texas.Column(db_texas.Integer, db_texas.ForeignKey('ventas.tiendas.idTienda'), nullable = False)
-    idEmpleado = db_texas.Column(db_texas.Integer, db_texas.ForeignKey('ventas.empleados.idEmpleado'), nullable = False)
+    idTienda = db_texas.Column(db_texas.Integer, nullable = False)
+    idEmpleado = db_texas.Column(db_texas.Integer, nullable = False)
 
 # -------------------------------------- Modelo de la base de New York -----------------------------------------------
 db_newyork = SQLAlchemy(app)
@@ -258,7 +258,7 @@ def get_amount():
     for sell in sells:
         new_sell = []
         if sell[2] == 4:
-            if startDate < sell[3] < endDate:
+            if startDate <= sell[3] <= endDate:
                 new_sell.append(sell[0])
                 new_sell.append(sell[1])
                 new_sell.append(sell[4])
@@ -308,15 +308,13 @@ def get_sells():
     for order in ordenes:
         new_order = []
         if order[3] == 4:
-            if startDate < order[4] < endDate:
+            if startDate <= order[4] <= endDate:
                 if order[0] == store:
                     new_order.append(order[1])      #idProducto
                     new_order.append(order[2])      #nomProducto
                     new_order.append(order[5])      #precioVenta
         if new_order != []:
             result.append(new_order)
-
-    print(result)
 
     indices = []
     for x in result:
@@ -398,8 +396,8 @@ def get_clients():
 
 # ------------------------- Store View -------------------------
 # Categories
-@app.route('/categories', methods=['GET'])
-def get_category():
+@app.route('/categories/newyork', methods=['GET'])
+def get_category_newyork():
 
     categories = categorias_newyork.query.with_entities(
         categorias_newyork.idCategoria,
@@ -418,6 +416,504 @@ def get_category():
 
     return jsonify(result), 200
 
+
+@app.route('/categories/texas', methods=['GET'])
+def get_category_texas():
+
+    categories = categorias_texas.query.with_entities(
+        categorias_texas.idCategoria,
+        categorias_texas.descripcion
+    ).all()
+    
+    result = []
+
+    for category in categories:
+        new_category = []
+
+        for data in category:
+            new_category.append(data)
+
+        result.append(new_category)
+
+    return jsonify(result), 200
+
+@app.route('/categories/california', methods=['GET'])
+def get_category_california():
+
+    categories = categorias_california.query.with_entities(
+        categorias_california.idCategoria,
+        categorias_california.descripcion
+    ).all()
+    
+    result = []
+
+    for category in categories:
+        new_category = []
+
+        for data in category:
+            new_category.append(data)
+
+        result.append(new_category)
+
+    return jsonify(result), 200
+
+
+#Total sells of the store
+
+@app.route('/sells/newyork', methods=['GET'])
+def get_sells_newyork():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    sells = detalleOrden_newyork.query.join(ordenes_newyork).join(tiendas_newyork).with_entities(
+        ordenes_newyork.estadoOrden,
+        ordenes_newyork.fechaOrden,
+        detalleOrden_newyork.precioVenta,
+        tiendas_newyork.estado
+    ).all()
+    
+    result = []
+    amount = 0
+    for sell in sells:
+        if sell[0] == 4:
+            if startDate <= sell[1] <= endDate:
+                if sell[3] == "NY":
+                    amount += sell[2]
+
+    result.append(str(amount))
+    result.append(data["startDate"])
+    result.append(data["endDate"])
+
+    return jsonify(result), 200
+
+@app.route('/sells/texas', methods=['GET'])
+def get_sells_texas():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    sells = detalleOrden_texas.query.join(ordenes_texas).with_entities(
+        ordenes_texas.estadoOrden,
+        ordenes_texas.fechaOrden,
+        detalleOrden_texas.precioVenta,
+        ordenes_texas.idOrden
+    ).all()
+    
+    result = []
+    amount = 0
+    for sell in sells:
+        if sell[0] == 4:
+            if startDate <= sell[1] <= endDate:
+                amount += sell[2]
+
+    result.append(str(amount))
+    result.append(data["startDate"])
+    result.append(data["endDate"])
+
+    return jsonify(result), 200
+
+
+@app.route('/sells/california', methods=['GET'])
+def get_sells_california():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    sells = detalleOrden_california.query.join(ordenes_california).with_entities(
+        ordenes_california.estadoOrden,
+        ordenes_california.fechaOrden,
+        detalleOrden_california.precioVenta,
+        ordenes_california.idOrden
+    ).all()
+    
+    result = []
+    amount = 0
+    for sell in sells:
+        if sell[0] == 4:
+            if startDate <= sell[1] <= endDate:
+                amount += sell[2]
+
+    result.append(str(amount))
+    result.append(data["startDate"])
+    result.append(data["endDate"])
+
+    return jsonify(result), 200
+
+# Number of orders per client
+@app.route('/orders/client/newyork', methods=['GET'])
+def get_orders_clients_newyork():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_newyork.query.join(clientes_newyork).join(tiendas_newyork).with_entities(
+        clientes_newyork.nombre,
+        clientes_newyork.apellido,
+        tiendas_newyork.estado,
+        clientes_newyork.idCliente,
+        ordenes_newyork.idOrden,
+        ordenes_newyork.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if client[2] == "NY":
+            if startDate <= client[5] <= endDate:
+                if client[3] not in indices:
+                    indices.append(client[3])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[3] == y:
+                cantidad += 1
+                temp = client
+        new_result.append(temp[3])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(cantidad)
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+@app.route('/orders/client/texas', methods=['GET'])
+def get_orders_clients_texas():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_texas.query.join(clientes_texas).with_entities(
+        clientes_texas.nombre,
+        clientes_texas.apellido,
+        clientes_texas.idCliente,
+        ordenes_texas.idOrden,
+        ordenes_texas.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if startDate <= client[4] <= endDate:
+            if client[2] not in indices:
+                indices.append(client[2])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[2] == y:
+                cantidad += 1
+                temp = client
+        new_result.append(temp[2])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(cantidad)
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+@app.route('/orders/client/california', methods=['GET'])
+def get_orders_clients_california():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_california.query.join(clientes_california).with_entities(
+        clientes_california.nombre,
+        clientes_california.apellido,
+        clientes_california.idCliente,
+        ordenes_california.idOrden,
+        ordenes_california.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if startDate <= client[4] <= endDate:
+            if client[2] not in indices:
+                indices.append(client[2])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[2] == y:
+                cantidad += 1
+                temp = client
+        new_result.append(temp[2])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(cantidad)
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+# Average amount $ bought per client
+@app.route('/amount/client/newyork', methods=['GET'])
+def get_amount_clients_newyork():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_newyork.query.join(clientes_newyork).join(tiendas_newyork).join(detalleOrden_newyork).with_entities(
+        clientes_newyork.nombre,
+        clientes_newyork.apellido,
+        tiendas_newyork.estado,
+        clientes_newyork.idCliente,
+        ordenes_newyork.idOrden,
+        detalleOrden_newyork.precioVenta,
+        ordenes_newyork.estadoOrden,
+        ordenes_newyork.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if startDate <= client[7] <= endDate:
+            if client[6] == 4:
+                if client[2] == "NY":
+                    if client[3] not in indices:
+                        indices.append(client[3])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[3] == y:
+                cantidad += client[5]
+                temp = client
+        new_result.append(temp[3])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(str(cantidad))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+@app.route('/amount/client/texas', methods=['GET'])
+def get_amount_clients_texas():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_texas.query.join(clientes_texas).join(detalleOrden_texas).with_entities(
+        clientes_texas.nombre,
+        clientes_texas.apellido,
+        clientes_texas.idCliente,
+        ordenes_texas.idOrden,
+        detalleOrden_texas.precioVenta,
+        ordenes_texas.estadoOrden,
+        ordenes_texas.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if client[5] == 4:
+            if startDate <= client[6] <= endDate:
+                if client[2] not in indices:
+                    indices.append(client[2])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[2] == y:
+                cantidad += client[4]
+                temp = client
+        new_result.append(temp[2])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(str(cantidad))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+@app.route('/amount/client/california', methods=['GET'])
+def get_amount_clients_california():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    clients = ordenes_california.query.join(clientes_california).join(detalleOrden_california).with_entities(
+        clientes_california.nombre,
+        clientes_california.apellido,
+        clientes_california.idCliente,
+        ordenes_california.idOrden,
+        detalleOrden_california.precioVenta,
+        ordenes_california.estadoOrden,
+        ordenes_california.fechaOrden
+    ).all()
+    
+    indices = []
+    for client in clients:
+        if client[5] == 4:
+            if startDate <= client[6] <= endDate:
+                if client[2] not in indices:
+                    indices.append(client[2])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        temp = []
+        for client in clients:
+            if client[2] == y:
+                cantidad += client[4]
+                temp = client
+        new_result.append(temp[2])
+        new_result.append(temp[0]+' '+temp[1])
+        new_result.append(str(cantidad))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+# Total sells per product by category
+@app.route('/sells/category/newyork', methods=['GET'])
+def get_sells_category_newyork():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    products = detalleOrden_newyork.query.join(productos_newyork).join(ordenes_newyork).join(tiendas_newyork).with_entities(
+        productos_newyork.idProducto,
+        productos_newyork.nomProducto,
+        tiendas_newyork.estado,
+        detalleOrden_newyork.precioVenta,
+        ordenes_newyork.estadoOrden,
+        ordenes_newyork.fechaOrden
+    ).all()
+    
+    indices = []
+    for product in products:
+        if startDate <= product[5] <= endDate:
+            if product[4] == 4:
+                if product[2] == "NY":
+                    if product[0] not in indices:
+                        indices.append(product[0])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        venta = 0
+        temp = []
+        for product in products:
+            if product[0] == y:
+                venta += product[3]
+                cantidad += 1
+                temp = product
+        new_result.append(temp[0])
+        new_result.append(temp[1])
+        new_result.append(cantidad)
+        new_result.append(str(venta))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+@app.route('/sells/category/texas', methods=['GET'])
+def get_sells_category_texas():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    products = detalleOrden_texas.query.join(productos_texas).join(ordenes_texas).with_entities(
+        productos_texas.idProducto,
+        productos_texas.nomProducto,
+        detalleOrden_texas.precioVenta,
+        ordenes_texas.estadoOrden,
+        ordenes_texas.fechaOrden
+    ).all()
+
+    indices = []
+    for product in products:
+        if startDate <= product[4] <= endDate:
+            if product[3] == 4:
+                if product[0] not in indices:
+                    indices.append(product[0])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        venta = 0
+        temp = []
+        for product in products:
+            if product[0] == y:
+                venta += product[2]
+                cantidad += 1
+                temp = product
+        new_result.append(temp[0])
+        new_result.append(temp[1])
+        new_result.append(cantidad)
+        new_result.append(str(venta))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+@app.route('/sells/category/california', methods=['GET'])
+def get_sells_category_california():
+
+    data = request.get_json()
+    startDate = datetime.datetime.strptime(data["startDate"], '%Y-%m-%d').date()
+    endDate = datetime.datetime.strptime(data["endDate"], '%Y-%m-%d').date()
+
+    products = detalleOrden_california.query.join(productos_california).join(ordenes_california).with_entities(
+        productos_california.idProducto,
+        productos_california.nomProducto,
+        detalleOrden_california.precioVenta,
+        ordenes_california.estadoOrden,
+        ordenes_california.fechaOrden
+    ).all()
+
+    indices = []
+    for product in products:
+        if startDate <= product[4] <= endDate:
+            if product[3] == 4:
+                if product[0] not in indices:
+                    indices.append(product[0])
+
+    result = [] 
+    for y in indices:
+        new_result = []
+        cantidad = 0
+        venta = 0
+        temp = []
+        for product in products:
+            if product[0] == y:
+                venta += product[2]
+                cantidad += 1
+                temp = product
+        new_result.append(temp[0])
+        new_result.append(temp[1])
+        new_result.append(cantidad)
+        new_result.append(str(venta))
+        result.append(new_result)
+            
+    return jsonify(result), 200
+
+
+# Insert new order
 
 #----------------------------- Run  ----------------------------
 if __name__ == "__main__":
