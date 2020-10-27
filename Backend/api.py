@@ -9,12 +9,16 @@ import datetime
 
 # -------------------------------------- Conexion con las bases de datos -----------------------------------------------
 app = Flask(__name__)
+cors = CORS(app)
 app.config['SQLALCHEMY_BINDS'] = {
     'newyork':      "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@13.66.5.40/NewYork?driver=SQL Server Native Client 11.0",
     'texas':        "mssql+pyodbc://crisptofer12ff:*cristofer12ff*@157.55.196.141/Texas?driver=SQL Server Native Client 11.0",
     'california':   "mssql+pyodbc://ezuniga97:@Esteban1497@13.85.159.205/California?driver=SQL Server Native Client 11.0"
 }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['CORS_ALLOW_HEADERS'] = 'Content-Type'
+app.config['CORS_SUPPORTS_CREDENTIALS'] = True
+app.config['CORS_EXPOSE_HEADERS'] = True
 
 # -------------------------------------- Modelo de la base de California -----------------------------------------------
 db_california = SQLAlchemy(app)
@@ -66,7 +70,7 @@ class ordenes_california(db_california.Model):
     __bind_key__ = 'california'
     __tablename__ = 'ordenes'
     __table_args__ = {"schema": "ventas"}
-    idOrden = db_california.Column(db_california.Integer, primary_key=True)
+    idOrden = db_california.Column(db_california.Integer, primary_key=True, autoincrement = False)
     idCliente = db_california.Column(db_california.Integer, db_california.ForeignKey('ventas.clientes.idCliente'), nullable = True)
     estadoOrden = db_california.Column(db_california.Integer, nullable = False)
     fechaOrden = db_california.Column(db_california.Date, nullable = False)
@@ -125,7 +129,7 @@ class ordenes_texas(db_texas.Model):
     __bind_key__ = 'texas'
     __tablename__ = 'ordenes'
     __table_args__ = {"schema": "ventas"}
-    idOrden = db_texas.Column(db_texas.Integer, primary_key=True)
+    idOrden = db_texas.Column(db_texas.Integer, primary_key=True, autoincrement = False)
     idCliente = db_texas.Column(db_texas.Integer, db_texas.ForeignKey('ventas.clientes.idCliente'), nullable = True)
     estadoOrden = db_texas.Column(db_texas.Integer, nullable = False)
     fechaOrden = db_texas.Column(db_texas.Date, nullable = False)
@@ -964,58 +968,48 @@ def create_order():
     
     data = request.get_json()
 
-    if data["storeName"] == "Baldwin Bikes":
+    store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
 
-        store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
-        print(store.idTienda)
+    ordenes = ordenes_newyork.query.with_entities(
+        ordenes_newyork.idOrden
+    )
+    new_id = 0
+    for orden in ordenes:
+        new_id += 1
+    new_id = new_id + 2
 
-        ordenes = ordenes_newyork.query.with_entities(
-            ordenes_newyork.idOrden
-        )
-        new_id = 0
-        for orden in ordenes:
-            new_id += 1
-        new_id = new_id + 1
+    print(new_id)
 
-        new_order = ordenes_newyork(
-            idOrden = new_id,
-            idCliente = data["clientId"],
-            estadoOrden = 1,
-            fechaOrden = data["orderDate"],
-            required_date = data["requiredDate"],
-            fechaEnvio = None,
-            idTienda = store.idTienda,
-            idEmpleado = data["employeeId"]
-        ) 
-        db_newyork.session.add(new_order)
-        db_newyork.session.commit()
+    new_order = ordenes_newyork(
+        idOrden = new_id,
+        idCliente = data["clientId"],
+        estadoOrden = 1,
+        fechaOrden = data["orderDate"],
+        required_date = data["requiredDate"],
+        fechaEnvio = None,
+        idTienda = store.idTienda,
+        idEmpleado = data["employeeId"]
+    ) 
+    db_newyork.session.add(new_order)
+    db_newyork.session.commit()
 
-        product = productos_newyork.query.filter(productos_newyork.nomProducto.like(data["productName"])).first()
+    product = productos_newyork.query.filter(productos_newyork.nomProducto.like(data["productName"])).first()
 
-        new_detail_order = detalleOrden_newyork(
-            idOrden = new_id,
-            idItem = 1,
-            idProducto = product.idProducto,
-            cantidad = data["quantity"],
-            precioVenta = product.precioVenta,
-            descuento = 0,
-        )
+    new_detail_order = detalleOrden_newyork(
+        idOrden = new_id,
+        idItem = 1,
+        idProducto = product.idProducto,
+        cantidad = data["quantity"],
+        precioVenta = product.precioVenta,
+        descuento = 0,
+    )
 
-        db_newyork.session.add(new_detail_order)
-        db_newyork.session.commit()
+    db_newyork.session.add(new_detail_order)
+    db_newyork.session.commit()
 
     if data["storeName"] == "Santa Cruz Bikes":
 
         store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
-        print(store.idTienda)
-
-        ordenes = ordenes_newyork.query.with_entities(
-            ordenes_newyork.idOrden
-        )
-        new_id = 0
-        for orden in ordenes:
-            new_id += 1
-        new_id += 1
 
         new_order = ordenes_california(
             idOrden = new_id,
@@ -1041,21 +1035,12 @@ def create_order():
             descuento = 0,
         )
 
-        response = jsonify({'message' : 'New order created!'})
-        return response
+        db_california.session.add(new_detail_order)
+        db_california.session.commit()
 
     if data["storeName"] == "Rowlett Bikes":
 
         store = tiendas_newyork.query.filter(tiendas_newyork.nomTienda.like(data["storeName"])).first()
-        print(store.idTienda)
-
-        ordenes = ordenes_newyork.query.with_entities(
-            ordenes_newyork.idOrden
-        )
-        new_id = 0
-        for orden in ordenes:
-            new_id += 1
-        new_id += 1
 
         new_order = ordenes_texas(
             idOrden = new_id,
@@ -1081,8 +1066,11 @@ def create_order():
             descuento = 0,
         )
 
-        response = jsonify({'message' : 'New order created!'})
-        return response
+        db_texas.session.add(new_detail_order)
+        db_texas.session.commit()
+
+    response = jsonify({'message' : 'New order created!'})
+    return response
 
 #----------------------------- Run  ----------------------------
 if __name__ == "__main__":
