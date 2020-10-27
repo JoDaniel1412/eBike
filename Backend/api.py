@@ -32,7 +32,7 @@ class productos_california(db_california.Model):
     __table_args__ = {"schema": "produccion"}
     idProducto = db_california.Column(db_california.Integer, primary_key=True)
     nomProducto = db_california.Column(db_california.String(255), nullable = False)
-    idMarca = db_california.Column(db_california.Integer, db_california.ForeignKey('produccion.marcas.idMarca'), nullable = False)
+    idMarca = db_california.Column(db_california.Integer, nullable = False)
     idCategoria = db_california.Column(db_california.Integer, db_california.ForeignKey('produccion.categorias.idCategoria'), nullable = False)
     annoModelo = db_california.Column(db_california.Integer, nullable = False)
     precioVenta = db_california.Column(db_california.Integer, nullable = False)
@@ -91,7 +91,7 @@ class productos_texas(db_texas.Model):
     __table_args__ = {"schema": "produccion"}
     idProducto = db_texas.Column(db_texas.Integer, primary_key=True)
     nomProducto = db_texas.Column(db_texas.String(255), nullable = False)
-    idMarca = db_texas.Column(db_texas.Integer, db_texas.ForeignKey('produccion.marcas.idMarca'), nullable = False)
+    idMarca = db_texas.Column(db_texas.Integer, nullable = False)
     idCategoria = db_texas.Column(db_texas.Integer, db_texas.ForeignKey('produccion.categorias.idCategoria'), nullable = False)
     annoModelo = db_texas.Column(db_texas.Integer, nullable = False)
     precioVenta = db_texas.Column(db_texas.Integer, nullable = False)
@@ -913,7 +913,51 @@ def get_sells_category_california():
     return jsonify(result), 200
 
 
-# Insert new order
+# Products of a store
+@app.route('/productos', methods=['GET'])
+def get_productos():
+
+    data = request.get_json()
+    result = []
+    
+    if data["storeName"] == "newyork":
+        productos = productos_newyork.query.with_entities(
+            productos_newyork.nomProducto,
+            productos_newyork.precioVenta,
+        ).all()
+
+        for producto in productos:
+            new_producto = []
+            new_producto.append(producto[0])
+            new_producto.append(float(producto[1]))
+            result.append(new_producto)
+
+    if data["storeName"] == "texas":
+        productos = productos_texas.query.with_entities(
+            productos_texas.nomProducto,
+            productos_texas.precioVenta,
+        ).all()
+
+        for producto in productos:
+            new_producto = []
+            new_producto.append(producto[0])
+            new_producto.append(float(producto[1]))
+            result.append(new_producto)
+
+    if data["storeName"] == "california":
+        productos = productos_california.query.with_entities(
+            productos_california.nomProducto,
+            productos_california.precioVenta,
+        ).all()
+
+        for producto in productos:
+            new_producto = []
+            new_producto.append(producto[0])
+            new_producto.append(float(producto[1]))
+            result.append(new_producto)
+
+    return jsonify(result), 200
+
 
 #----------------------------- Run  ----------------------------
 if __name__ == "__main__":
