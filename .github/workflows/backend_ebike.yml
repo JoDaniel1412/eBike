@@ -31,4 +31,4 @@ jobs:
       with:
         app-name: 'ebike'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_821a93facea34e879253e907b1efb66b }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_318f4d83477e4c8b91a15e8b3db945f3 }}
